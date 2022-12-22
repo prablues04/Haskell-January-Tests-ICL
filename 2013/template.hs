@@ -94,13 +94,14 @@ addOne num
     | last num == 0 = init num ++ [1]
     | otherwise     = addOne (init num) ++ [0]
 
-
+{- FOLLOWING FUNCTION ONLY USED TO HELP ME THINK ABOUT THE ANSWER 
+   AND VERIFY MY PART 3 SOLUTIONS TO SOME EXTENT
 findNumNodes :: BinHeap a -> Int
 findNumNodes [] = 0
 findNumNodes heap@(t@(Node _ _ []):ts) = 1 + findNumNodes ts
 findNumNodes heap@(t@(Node _ _ h):ts) 
     = 1 + findNumNodes h + findNumNodes ts
-
+-}
 
 binarySum :: [Int] -> [Int] -> [Int]
 binarySum [] [] = [0]
