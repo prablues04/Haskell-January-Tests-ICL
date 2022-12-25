@@ -154,13 +154,14 @@ partitionData dataset@(headr,rows) attr = map (\(attVal, rows') -> (attVal, (new
 
 
 buildTree :: DataSet -> Attribute -> AttSelector -> DecisionTree 
-buildTree ds@(header,_) attr _ 
-    = if header == [attr] = Leaf 
-buildTree dataset attr attSelect
-    = Node name nextNode
+buildTree ds attr attSelect
+    | nub (map (lookUpAtt (fst attr) (fst ds)) (snd ds)) == ("bad":[]) = Leaf "bad"
+    | nub (map (lookUpAtt (fst attr) (fst ds)) (snd ds)) == ("good":[]) = Leaf "good"
+    | nub (map (lookUpAtt (fst attr) (fst ds)) (snd ds)) == [] = Null
+    | otherwise = Node name nextNode
       where
-        partitioned = partitionData dataset attr'
-        attr'@(name,_) = attSelect dataset attr
+        partitioned = partitionData ds attr'
+        attr'@(name,_) = attSelect ds attr
         nextNode = (map (\(attValue, subData) -> (attValue, buildTree subData attr attSelect)) partitioned)
 
 --------------------------------------------------------------------
