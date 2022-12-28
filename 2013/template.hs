@@ -52,6 +52,7 @@ deleteMin h = newHeap h' subTrees
             | rank t == rank t' = newHeap (mergeHeaps ts [combineTrees t t']) ts'
             | otherwise         = heap ++ subts 
 
+
 remove :: Eq a => a -> BinHeap a -> BinHeap a
 remove min (t:ts)
     | value t == min = ts
