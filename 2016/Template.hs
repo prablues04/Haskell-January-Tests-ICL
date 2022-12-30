@@ -1,6 +1,7 @@
 module Exam where
 
 import Data.Char
+import Data.List
 import Data.Maybe
   
 type Name = String
@@ -46,29 +47,50 @@ printXMLs
 -- Part I
 
 skipSpace :: String -> String
-skipSpace
-  = undefined
+skipSpace [] = []
+skipSpace [c] = if c == ' ' then "" else [c]
+skipSpace s@(c1:c2:cs) 
+    | "\n" `isPrefixOf` s = skipSpace cs
+    | " " `isPrefixOf` s  = skipSpace (c2:cs)
+    | otherwise           = (c1:c2:cs)
 
 getAttribute :: String -> XML -> String
-getAttribute 
-  = undefined
+getAttribute attName (Element _ as _)
+    = fromMaybe "" (lookup attName as)
+getAttribute attName xml = ""
 
 getChildren :: String -> XML -> [XML]
-getChildren 
-  = undefined
-
+getChildren _ (Text _) = []
+getChildren childName (Element _ _ xmls@(x:xs))
+    = concatMap (getChildren' childName) xmls
+    where
+        getChildren' childName xml@(Element name _ _)
+            | name == childName = [xml]
+            | otherwise         = []
+        getChildren' _ (Text _) = []
+        
 getChild :: String -> XML -> XML
-getChild 
-  = undefined
+getChild cname xml
+    | children == [] = Text ""
+    | otherwise      = firstChild
+    where
+        children = getChildren cname xml
+        (firstChild:_) = children
 
 addChild :: XML -> XML -> XML
 -- Pre: the second argument is an Element
-addChild 
-  = undefined
+addChild child (Element parent atts children)
+    = Element parent atts (children ++ [child])
 
 getValue :: XML -> XML
-getValue 
-  = undefined
+getValue (Text x) = Text x
+getValue (Element _ _ cs) 
+    = Text (concatMap (\(Text x) -> x) findTexts)
+      where
+        getTexts (Text x) = [Text x]
+        getTexts (Element _ _ cs')
+            = concatMap getTexts cs'
+        findTexts = concatMap getTexts cs 
 
 -------------------------------------------------------------------------
 -- Part II
@@ -90,18 +112,36 @@ sentinel
 
 addText :: String -> Stack -> Stack
 -- Pre: There is at least one Element on the stack
-addText 
-  = undefined
+addText t s@(top:rest)
+    = addChild (Text t) top:rest
 
 popAndAdd :: Stack -> Stack
 -- Pre: There are at least two Elements on the stack
-popAndAdd 
-  = undefined
+popAndAdd (top:second:rest)
+    = addChild top second:rest
 
 parseAttributes :: String -> (Attributes, String)
 -- Pre: The XML attributes string is well-formed
-parseAttributes 
-  = undefined
+parseAttributes pairs 
+    | c == '>'  = ([],cs)
+    | otherwise = ((name,a) : ps, remString')
+    where
+        (c:cs) = skipSpace pairs
+        (ps, remString') = parseAttributes remString
+        getName str@(s:s') 
+            | s == '='  = ([], s'')
+            | otherwise = ((s:name'),rem')
+              where
+                rem@(_:s'')  = skipSpace s'
+                (name',rem') = getName rem
+        (name, attrAndRem) = getName (c:cs)
+        getAtt ('\"':s') = ([], skipSpace s')
+        getAtt (s:s') = ((s:attr), rem)
+            where
+                (attr, rem) = getAtt s'
+        (a, remString) = getAtt attrAndRem
+
+        
 
 parse :: String -> XML
 -- Pre: The XML string is well-formed
@@ -109,9 +149,26 @@ parse s
   = parse' (skipSpace s) [sentinel]
 
 parse' :: String -> Stack -> XML
-parse' 
-  = undefined
-
+parse' [] [element] = element
+parse' [] stack = parse' [] (popAndAdd stack)
+parse' s@(c:cs) stack
+    | c == '/' 
+        = parse' remText (popAndAdd stack)
+    | c == '<'  
+        = parse' remText (newElement:stack)
+    | otherwise
+        = parse' remText' (addText text stack)
+      where
+        (_,remText) = parseAttributes s
+        readName (c:cs)
+            | c /= ' '  = (c:fst (readName cs), snd (readName cs))
+            | otherwise = ([],cs)
+        (name, atts) = readName cs
+        newElement = (Element name (fst (parseAttributes atts)) [])
+        newText [] = ([],[])
+        newText ('<':cs) = ([],('<':cs))
+        newText (c:cs) =  (c:fst (newText cs), snd (newText cs))
+        (text,remText') = newText s
 -------------------------------------------------------------------------
 -- Part III
 
