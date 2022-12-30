@@ -149,26 +149,20 @@ parse s
   = parse' (skipSpace s) [sentinel]
 
 parse' :: String -> Stack -> XML
-parse' [] [element] = element
+parse' [] (top@(Element _ _ [xmls]):[]) = xmls
 parse' [] stack = parse' [] (popAndAdd stack)
-parse' s@(c:cs) stack
-    | c == '/' 
-        = parse' remText (popAndAdd stack)
-    | c == '<'  
-        = parse' remText (newElement:stack)
-    | otherwise
-        = parse' remText' (addText text stack)
-      where
-        (_,remText) = parseAttributes s
-        readName (c:cs)
-            | c /= ' '  = (c:fst (readName cs), snd (readName cs))
-            | otherwise = ([],cs)
-        (name, atts) = readName cs
-        newElement = (Element name (fst (parseAttributes atts)) [])
-        newText [] = ([],[])
-        newText ('<':cs) = ([],('<':cs))
-        newText (c:cs) =  (c:fst (newText cs), snd (newText cs))
-        (text,remText') = newText s
+parse' text@(t:ts) stack
+    | isPrefixOf "</" text = parse' endOfTag (popAndAdd stack)
+    | t == '<'             = parse' rest (newTop:stack)
+    | '<' `notElem` text   = parse' [] stack
+    | otherwise            = parse' startOfTag (addText (takeWhile (/='<') text) stack)
+    where
+        (_:endOfTag) = dropWhile (/='>') text
+        name = takeWhile (\c -> c/=' ' && c/='>') ts
+        (attributes, rest) = parseAttributes (foldr (delete) ts name)
+        newTop = Element name attributes []
+        startOfTag = dropWhile (/='<') text
+
 -------------------------------------------------------------------------
 -- Part III
 
