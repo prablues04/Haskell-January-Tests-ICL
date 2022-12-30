@@ -1,4 +1,5 @@
 import Data.Maybe
+import Data.List
 
 -- All programs are assumed to be well-formed in the following sense:
 --
@@ -145,7 +146,20 @@ executeStatement (If expr b1 b2) fds pds state
 executeStatement (While expr block) fds pds state
     | eval expr fds state == I 1 = executeBlock block fds pds state
     | otherwise                   = state
---executeStatement (Call "" p es) fds pds state = executeBlock p 
+executeStatement (Call var p es) fds pds state
+    | var == "" = finalState
+    | otherwise = updateVar (var, returnVal) finalState
+    where
+        state' = filter (\(x,_) -> notElem x as) (getGlobals state)
+        outOfScope = union (getLocals state) (filter (\(x,_) -> elem x as) state)
+        --evaluatedEs = evalArgs es fds state'
+        (as, block) = lookUp p pds
+        --bindings = bindArgs as evaluatedEs
+        returnState = executeBlock block fds pds state'
+        returnBinding = (filter (\(x,_) -> x == "$res") returnState)
+        [returnVal] = map (\(_,(_,x)) -> x) returnBinding
+        removeLocals = getGlobals returnState
+        finalState = union removeLocals outOfScope
 executeStatement (Return expr) fds pds state
     = updateVar ("$res", eval expr fds state) state
 
