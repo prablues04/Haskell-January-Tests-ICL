@@ -124,24 +124,16 @@ parseAttributes :: String -> (Attributes, String)
 -- Pre: The XML attributes string is well-formed
 parseAttributes pairs 
     | c == '>'  = ([],cs)
-    | otherwise = ((name,a) : ps, remString')
+    | otherwise = ((name,attribute) : ps, remString')
     where
-        (c:cs) = skipSpace pairs
+        str = skipSpace pairs
+        (c:cs) = str
         (ps, remString') = parseAttributes remString
-        getName str@(s:s') 
-            | s == '='  = ([], s'')
-            | otherwise = ((s:name'),rem')
-              where
-                rem@(_:s'')  = skipSpace s'
-                (name',rem') = getName rem
-        (name, attrAndRem) = getName (c:cs)
-        getAtt ('\"':s') = ([], skipSpace s')
-        getAtt (s:s') = ((s:attr), rem)
-            where
-                (attr, rem) = getAtt s'
-        (a, remString) = getAtt attrAndRem
+        name = takeWhile (\c -> c/=' ' && c/='=') str
+        (_:afterName) = skipSpace (foldr (delete) str name)
+        (_:attributeStart) = skipSpace afterName
+        (attribute,(_:remString)) = span (/='\"') attributeStart
 
-        
 
 parse :: String -> XML
 -- Pre: The XML string is well-formed
