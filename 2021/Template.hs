@@ -35,8 +35,8 @@ removeNode n graph@(nodes,edges)
 colourGraph :: (Ord a, Show a) => Int -> Graph a -> Colouring a
 colourGraph _ ([],_) = []
 colourGraph numColours g@(nodes, edges) 
-    | numConnections == [0] = initMap
-    | otherwise             = [(n,nColour )] ++ colourGraph'
+    | numConnections == [1] = [(n,nColour)] ++ initMap
+    | otherwise             = [(n,nColour)] ++ colourGraph'
     where
         colourGraph' = colourGraph numColours g'
         (_,n) = minimum (map (\(a,b)->(b,a)) (degrees g))
@@ -45,7 +45,7 @@ colourGraph numColours g@(nodes, edges)
         initMap = zip (coloured) [1..numColours] ++ map (\n' -> (n',0)) (blanks)
         (coloured, blanks) = splitAt numColours ns'
         (nColour:_) = ([1..numColours] \\ map (`lookUp` colourGraph') neighbours_n) ++ [0]
-        neighbours_n = filter (`elem` colourGraph') (neighbours n g)
+        neighbours_n = neighbours n g
 
 
 
