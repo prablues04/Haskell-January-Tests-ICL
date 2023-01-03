@@ -115,7 +115,7 @@ accepts a str
                     | otherwise = False
                 try s@(c:cs) trans@(_,resultingSt,l)
                     | l == Eps  = accepts' resultingSt s
-                    | l == C c  = accepts' resultingSt s
+                    | l == C c  = accepts' resultingSt cs
                     | otherwise = False
 --------------------------------------------------------
 -- Part III
