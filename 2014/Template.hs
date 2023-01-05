@@ -60,16 +60,14 @@ simplify (Plus exp)
       where exp' = simplify exp
 simplify (Opt exp)
     = Alt (simplify exp) Null
-simplify (Term char)
-    = Term char
-simplify Null
-    = Null
 simplify (Rep exp)
     = Rep (simplify exp)
 simplify (Seq e1 e2)
     = Seq (simplify e1) (simplify e2)
 simplify (Alt e1 e2)
     = Alt (simplify e1) (simplify e2)
+simplify re
+    = re
 
 
 --------------------------------------------------------
@@ -91,7 +89,8 @@ isTerminal s a
 
 transitionsFrom :: State -> Automaton -> [Transition]
 transitionsFrom s a
-    = filter (\(start,_,_) -> start == s) (transitions a)
+    = [ t | t@(start,_,_) <- transitions a, start == s]
+--    = filter (\(start,_,_) -> start == s) (transitions a)
 
 labels :: [Transition] -> [Label]
 labels
