@@ -1,3 +1,6 @@
+import Data.List hiding (insert)
+import Data.Maybe
+
 type BinHeap a = [BinTree a]
 
 data BinTree a = Node a Int (BinHeap a)
@@ -61,6 +64,17 @@ remove min (t:ts)
 removeMin :: Ord a => BinHeap a -> (BinTree a, BinHeap a)
 removeMin heap = (min, remove (value min) heap)
     where min = head (filter (\x -> value x == extractMin heap) heap)
+
+deleteMin' :: Ord a => BinHeap a -> BinHeap a
+deleteMin' h 
+    = mergeHeaps h' h''
+      where 
+        minTree = fromJust (find (\(Node val _ _) -> val == extractMin h) h)
+        h'      = reverse (children minTree)
+        h''     = delete minTree h
+--remove' :: Eq a => a -> BinHeap a -> BinHeap a
+
+--removeMin' :: Ord a => BinHeap a -> (BinTree a, BinHeap a)
 
 binSort :: Ord a => [a] -> [a]
 binSort []       = []
