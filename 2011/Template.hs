@@ -64,9 +64,7 @@ reverseLookUp item list
 occurs :: String -> Type -> Bool
 occurs x (TFun t1 t2)
     = occurs x t1 || occurs x t2
-occurs x (TVar y)
-    | x == y    = True
-    | otherwise = False
+occurs x (TVar y) = x == y
 occurs _ _
     = False
 
@@ -144,7 +142,7 @@ unifyPairs ps s
 
         addToList :: (Type, Type) -> [(Type,Type)]
         addToList (TFun t1 t2, TFun t1' t2')
-            = (addToList (t1,t1') ++ addToList (t2,t2'))
+            = (addToList (t2,t2') ++ addToList (t1,t1'))
         addToList pair 
             = [pair]
 ------------------------------------------------------
