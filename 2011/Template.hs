@@ -85,7 +85,8 @@ inferType (Prim op) _
     = lookUp op primTypes
 inferType (Cond pred e1 e2) typeEnv
     | inferType pred typeEnv /= TBool = TErr
-    | inferType e2 typeEnv == typeE1 = typeE1
+    | inferType e2 typeEnv == typeE1  = typeE1
+    | otherwise = TErr
       where typeE1 = inferType e1 typeEnv
 inferType (App e1 e2) tEnv
     | typeE1 == TErr || typeE2 == TErr 
@@ -113,7 +114,7 @@ applySub s (TFun t1 t2)
     = TFun (applySub s t1) (applySub s t2)
 applySub s (TVar x)
     = tryToLookUp x (TVar x) s
-applySub s t
+applySub _ t
     = t
 
 unify :: Type -> Type -> Maybe Sub
