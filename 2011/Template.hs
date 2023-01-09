@@ -59,12 +59,13 @@ tryToLookUp x d list
 -- Pre: The given value is in the table
 reverseLookUp :: Eq b => b -> [(a, b)] -> [a]
 reverseLookUp item list
-    = [x | (x,y) <- list, item == y]
+    = [key | (key,value) <- list, item == value]
 
 occurs :: String -> Type -> Bool
-occurs x (TFun t1 t2)
-    = occurs x t1 || occurs x t2
-occurs x (TVar y) = x == y
+occurs s (TFun t1 t2)
+    = occurs s t1 || occurs s t2
+occurs s (TVar y) 
+    = s == y
 occurs _ _
     = False
 
@@ -83,11 +84,15 @@ inferType (Id x) typeEnv
     = lookUp x typeEnv
 inferType (Prim op) _
     = lookUp op primTypes
-inferType (Cond pred e1 e2) typeEnv
-    | inferType pred typeEnv /= TBool = TErr
-    | inferType e2 typeEnv == typeE1  = typeE1
-    | otherwise = TErr
-      where typeE1 = inferType e1 typeEnv
+inferType (Cond pred t e) typeEnv
+    | inferType pred typeEnv == TBool && typeE == typeT
+        = typeT
+    | otherwise 
+        = TErr
+      where
+        typeT = inferType t typeEnv
+        typeE = inferType e typeEnv
+
 inferType (App e1 e2) tEnv
     | typeE1 == TErr || typeE2 == TErr 
         = TErr
@@ -97,9 +102,7 @@ inferType (App e1 e2) tEnv
         typeE1 = inferType e1 tEnv
         typeE2 = inferType e2 tEnv
         inferApp :: Type -> Type -> Type
-        inferApp (TFun t1 t2) (TFun t1' t2')
-            | t1 == t1' = inferApp t2 t2'
-            | otherwise = TErr 
+        -- pre: all functions are applied as prefix and not infix
         inferApp (TFun t1 t2) t3
             | t3 == t1  = t2
             | otherwise = TErr
@@ -112,8 +115,8 @@ inferType (App e1 e2) tEnv
 applySub :: Sub -> Type -> Type
 applySub s (TFun t1 t2)
     = TFun (applySub s t1) (applySub s t2)
-applySub s (TVar x)
-    = tryToLookUp x (TVar x) s
+applySub s t@(TVar x)
+    = tryToLookUp x t s
 applySub _ t
     = t
 
@@ -121,7 +124,22 @@ unify :: Type -> Type -> Maybe Sub
 unify t t'
     = unifyPairs [(t, t')] []
 
-unifyPairs :: [(Type, Type)] -> Sub -> Maybe Sub
+unifyPairs :: [(Type,Type)] -> Sub -> Maybe Sub
+unifyPairs [] s = Just s
+unifyPairs (p@(t1,t2):ps) s
+    | t1 == t2 = unifyPairs ps s
+unifyPairs ((TVar v, t):ps) s
+    | not (occurs v t) = 
+        unifyPairs ps' s'
+      where
+        b = (v,t)
+        ps' = [(applySub [b] t1, applySub [b] t2) | (t1,t2) <- ps]
+        s' = b : s
+unifyPairs ((t, TVar v):ps) s
+    = unifyPairs ((TVar v, t):ps) s
+-- ....
+
+unifyPairs' :: [(Type, Type)] -> Sub -> Maybe Sub
 unifyPairs ps s
     | True `elem` occursInSub = Nothing
     | otherwise               = Just finalS
@@ -268,3 +286,7 @@ type13 = TFun (TVar "a1") (TFun (TFun (TVar "a1") (TFun TInt (TVar "a3")))
 ex14 = Fun "x" (Fun "y" (App (Id "x") (Prim "+"))) 
 type14 = TFun (TFun (TFun TInt (TFun TInt TInt)) (TVar "a3")) 
               (TFun (TVar "a2") (TVar "a3"))
+
+prefixes :: [a] -> [[a]]
+prefixes xs
+    = [take n xs| n <- [1..length xs]]
